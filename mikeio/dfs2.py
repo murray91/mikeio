@@ -160,7 +160,22 @@ class Dfs2:
         items = get_item_info(dfs, item_numbers)
 
         dfs.Close()
-        return Dataset(data_list, time, items)
+
+        ds = Dataset(data_list, time, items)
+
+        # spatial_coordinates valid only for non-rotated geographical coordinate system
+        if self._dfs.FileInfo.Projection.WKTString == "LONG/LAT":
+
+            x0 = self._dfs.FileInfo.Projection.Longitude
+            y0 = self._dfs.FileInfo.Projection.Latitude
+            x = [x0 + axis.Dx*i for i in range(axis.XCount)]
+            y = [y0 + axis.Dy*i for i in range(axis.YCount)]
+
+            ds.lon = x
+            ds.lat = list(reversed(y))
+
+
+        return ds
 
     def write(self, filename, data):
         """

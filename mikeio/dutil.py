@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from mikeio.eum import EUMType, EUMUnit, ItemInfo
 
+
 def find_item(dfs, item_names):
     """Utility function to find item numbers
 
@@ -190,6 +191,56 @@ class Dataset:
         df.index = pd.DatetimeIndex(self.time, freq="infer")
 
         return df
+
+    def to_xarray(self):
+        """Convert Dataset to a Xarray Dataset
+        
+        Returns
+        -------
+        xr.Dataset
+        """
+        import xarray as xr
+
+        res = {}
+
+        ndim = self.data[0].ndim
+
+        spdims = ["z", "y", "x"][3 - (ndim - 1) :]
+
+        if len(self.time) > 1:
+            dims = ["t"] + spdims
+            coords = {"t": self.time}
+        else:
+            dims = spdims
+            coords = {}
+
+        
+        if hasattr(self, "x"):
+            coords["x"] = self.x
+        
+        if hasattr(self, "lon"):
+            coords["lon"] = xr.DataArray(self.lon, dims="lon", attrs={"standard_name" : "longitude", "units" : "degrees_east"})
+            dims[dims.index("x")] = "lon"
+        
+        if hasattr(self, "y"):
+            coords["y"] = self.y
+
+        if hasattr(self, "lat"):
+            coords["lat"] = xr.DataArray(self.lat, dims="lat", attrs={"standard_name" : "latitude", "units" : "degrees_north"})
+            dims[dims.index("y")] = "lat"
+
+        for item in self.items:
+            v = item.name
+            res[v] = xr.DataArray(np.squeeze(self[v]), dims=dims, 
+            attrs={'name': v,
+                    # TODO add standard name from https://cfconventions.org/standard-names.html
+                   'units': item.unit.name,
+                   'eumType' : item.type,
+                   'eumUnit' : item.unit})        
+
+        ds = xr.Dataset(res, coords=coords)
+
+        return ds
 
     def _ipython_key_completions_(self):
         return self.names
