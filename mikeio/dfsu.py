@@ -233,7 +233,7 @@ class _UnstructuredGeometry:
         return asnetarray_v2(new_elem_table)
 
     def _set_nodes(
-        self, node_coordinates, codes=None, node_ids=None, projection_string=None
+            self, node_coordinates, codes=None, node_ids=None, projection_string=None
     ):
         self._nc = np.asarray(node_coordinates)
         if codes is None:
@@ -324,8 +324,8 @@ class _UnstructuredGeometry:
             n_layers = len(unique_layer_ids)
 
             if (
-                self._type == UnstructuredType.Dfsu3DSigma
-                or self._type == UnstructuredType.Dfsu3DSigmaZ
+                    self._type == UnstructuredType.Dfsu3DSigma
+                    or self._type == UnstructuredType.Dfsu3DSigmaZ
             ) and n_layers == 1:
                 # If source is 3d, but output only has 1 layer
                 # then change type to 2d
@@ -344,8 +344,8 @@ class _UnstructuredGeometry:
                 # If source is sigma-z but output only has sigma layers
                 # then change type accordingly
                 if (
-                    self._type == UnstructuredType.DfsuVerticalProfileSigmaZ
-                    or self._type == UnstructuredType.Dfsu3DSigmaZ
+                        self._type == UnstructuredType.DfsuVerticalProfileSigmaZ
+                        or self._type == UnstructuredType.Dfsu3DSigmaZ
                 ) and n_layers == geom._n_sigma:
                     geom._type = UnstructuredType(self._type.value - 1)
 
@@ -510,6 +510,19 @@ class _UnstructuredGeometry:
         self._ec = ec
         return ec
 
+    def get_dynamic_elements_z(self, elements=None):
+        if (self._type == UnstructuredType.DfsuVerticalProfileSigmaZ
+                or self._type == UnstructuredType.Dfsu3DSigmaZ):
+            z_coordinates = self.read([0])
+            if elements is None:
+                dynamic_z = z_coordinates[0][:, self.element_table].mean(axis=2)
+            else:
+                _, element_table = self._get_nodes_and_table_for_elements(elements)
+                dynamic_z = z_coordinates[0][:, element_table].mean(axis=2)
+        else:
+            dynamic_z = None
+        return dynamic_z
+
     def contains(self, points):
         """test if a list of points are contained by mesh
 
@@ -570,7 +583,7 @@ class _UnstructuredGeometry:
         return Grid2D(bbox=bbox, dx=dx, dy=dy, shape=shape)
 
     def get_2d_interpolant(
-        self, xy, n_nearest: int = 1, extrapolate=False, p=2, radius=None
+            self, xy, n_nearest: int = 1, extrapolate=False, p=2, radius=None
     ):
         """IDW interpolant for list of coordinates
 
@@ -711,7 +724,7 @@ class _UnstructuredGeometry:
         return self.find_nearest_elements(x, y, z, layer, n_nearest)
 
     def find_nearest_elements(
-        self, x, y=None, z=None, layer=None, n_nearest=1, return_distances=False
+            self, x, y=None, z=None, layer=None, n_nearest=1, return_distances=False
     ):
         """Find index of nearest elements (optionally for a list)
 
@@ -769,11 +782,11 @@ class _UnstructuredGeometry:
 
     def _use_third_col_as_z(self, x, z, layer):
         return (
-            (z is None)
-            and (layer is None)
-            and (not np.isscalar(x))
-            and (np.ndim(x) == 2)
-            and (x.shape[1] >= 3)
+                (z is None)
+                and (layer is None)
+                and (not np.isscalar(x))
+                and (np.ndim(x) == 2)
+                and (x.shape[1] >= 3)
         )
 
     def find_nearest_profile_elements(self, x, y):
@@ -797,6 +810,22 @@ class _UnstructuredGeometry:
             elem2d, _ = self._find_n_nearest_2d_elements(x, y)
             elem3d = self.e2_e3_table[elem2d]
             return elem3d
+
+    def find_dynamic_nearest_element(self, x, y, z=None):
+
+        top_element = self.find_nearest_elements(x,y)
+        top_element = self.top_elements[self.elem2d_ids[top_element]]
+        dynamic_Z = self.get_dynamic_elements_z([top_element])
+        dynamic_index = []
+        for time in range(self.n_timesteps):
+            dynamic_index.append(self.find_nearest_elements(x,y, z=z-dynamic_Z[0]+dynamic_Z[time]))
+        return dynamic_index
+
+
+
+
+
+
 
     def get_element_area(self):
         """Calculate the horizontal area of each element.
@@ -952,7 +981,7 @@ class _UnstructuredGeometry:
             n = len(top_elems)
             tmp = top_elems.copy()
             tmp[0] = -1
-            tmp[1:n] = top_elems[0 : (n - 1)]
+            tmp[1:n] = top_elems[0: (n - 1)]
             self._n_layers_column = top_elems - tmp
         return self._n_layers_column
 
@@ -1097,7 +1126,7 @@ class _UnstructuredGeometry:
 
         node_cellID = [
             list(np.argwhere(elem_table == i)[:, 0])
-            for i in np.unique(elem_table.reshape(-1,))
+            for i in np.unique(elem_table.reshape(-1, ))
         ]
         node_centered_data = np.zeros(shape=nc.shape[0])
         for n, item in enumerate(node_cellID):
@@ -1128,7 +1157,7 @@ class _UnstructuredGeometry:
 
     def _Get_2DVertical_elements(self):
         if (self._type == DfsuFileType.DfsuVerticalProfileSigmaZ) or (
-            self._type == DfsuFileType.DfsuVerticalProfileSigma
+                self._type == DfsuFileType.DfsuVerticalProfileSigma
         ):
             elements = [
                 list(self._source.ElementTable[i])
@@ -1137,7 +1166,7 @@ class _UnstructuredGeometry:
             return np.asarray(elements) - 1
 
     def plot_vertical_profile(
-        self, values, time_step=None, cmin=None, cmax=None, label="", **kwargs
+            self, values, time_step=None, cmin=None, cmax=None, label="", **kwargs
     ):
         """
         Plot unstructured vertical profile
@@ -1222,21 +1251,21 @@ class _UnstructuredGeometry:
         return ax
 
     def plot(
-        self,
-        z=None,
-        elements=None,
-        plot_type="patch",
-        title=None,
-        label=None,
-        cmap=None,
-        vmin=None,
-        vmax=None,
-        levels=10,
-        n_refinements=0,
-        show_mesh=True,
-        show_outline=True,
-        figsize=None,
-        ax=None,
+            self,
+            z=None,
+            elements=None,
+            plot_type="patch",
+            title=None,
+            label=None,
+            cmap=None,
+            vmin=None,
+            vmax=None,
+            levels=10,
+            n_refinements=0,
+            show_mesh=True,
+            show_outline=True,
+            figsize=None,
+            ax=None,
     ):
         """
         Plot unstructured data and/or mesh, mesh outline
@@ -1573,9 +1602,9 @@ class _UnstructuredGeometry:
         for polyline in polylines:
             xy = self.geometry2d.node_coordinates[polyline, :2]
             area = (
-                np.dot(xy[:, 1], np.roll(xy[:, 0], 1))
-                - np.dot(xy[:, 0], np.roll(xy[:, 1], 1))
-            ) * 0.5
+                           np.dot(xy[:, 1], np.roll(xy[:, 0], 1))
+                           - np.dot(xy[:, 0], np.roll(xy[:, 1], 1))
+                   ) * 0.5
             poly_line = np.asarray(polyline)
             xy = self.geometry2d.node_coordinates[poly_line, 0:2]
             poly = Polyline(len(polyline), poly_line, xy, area)
@@ -1601,7 +1630,7 @@ class _UnstructuredGeometry:
         for el in element_table:
             ele = [*el, el[0]]
             for j in range(len(el)):
-                all_faces.append(ele[j : j + 2])
+                all_faces.append(ele[j: j + 2])
 
         all_faces = np.asarray(all_faces)
 
@@ -1646,8 +1675,8 @@ class _UnstructuredFile(_UnstructuredGeometry):
         if not self.is_2d:
             out.append(f"Number of sigma layers: {self.n_sigma_layers}")
         if (
-            self._type == UnstructuredType.DfsuVerticalProfileSigmaZ
-            or self._type == UnstructuredType.Dfsu3DSigmaZ
+                self._type == UnstructuredType.DfsuVerticalProfileSigmaZ
+                or self._type == UnstructuredType.Dfsu3DSigmaZ
         ):
             out.append(f"Max number of z layers: {self.n_layers - self.n_sigma_layers}")
         if self._n_items is not None:
@@ -2106,7 +2135,7 @@ class Dfsu(_UnstructuredFile):
         return Dataset(data_list, times, items_out)
 
     def write_header(
-        self, filename, start_time=None, dt=None, items=None, elements=None, title=None,
+            self, filename, start_time=None, dt=None, items=None, elements=None, title=None,
     ):
         """Write the header of a new dfsu file
 
@@ -2153,15 +2182,15 @@ class Dfsu(_UnstructuredFile):
         )
 
     def write(
-        self,
-        filename,
-        data,
-        start_time=None,
-        dt=None,
-        items=None,
-        elements=None,
-        title=None,
-        keep_open=False,
+            self,
+            filename,
+            data,
+            start_time=None,
+            dt=None,
+            items=None,
+            elements=None,
+            title=None,
+            keep_open=False,
     ):
         """Write a new dfsu file
 
@@ -2241,7 +2270,7 @@ class Dfsu(_UnstructuredFile):
                 geometry = self.elements_to_geometry(elements, node_layers="bottom")
                 if items[0].name == "Z coordinate":
                     # get rid of z-item
-                    items = items[1 : (n_items + 1)]
+                    items = items[1: (n_items + 1)]
                     n_items = n_items - 1
                     new_data = []
                     for j in range(n_items):

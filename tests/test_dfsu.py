@@ -1113,3 +1113,23 @@ def test_extract_track():
 
     track3 = dfs.extract_track(csv_file, method="inverse_distance")
     assert track3.data[2][23] == approx(3.6865002370663547)
+
+
+def test_get_dynamic_element_z():
+    file_name = os.path.join("tests", "testdata", "oresund_sigma_z.dfsu")
+    dfs = Dfsu(file_name)
+    elements = [0, 1, 100, 1000]
+    dynamic_z = dfs.get_dynamic_elements_z(elements=elements)
+    assert dynamic_z.shape[0] == dfs.n_timesteps
+    assert dynamic_z.shape[1] == len(elements)
+
+
+def test_get_dynamic_nearest_element():
+    file_name = os.path.join("tests", "testdata", "oresund_sigma_z.dfsu")
+    dfs = Dfsu(file_name)
+    indx= dfs.find_dynamic_nearest_element(333934, 6158101, z=-1)
+    assert len(indx) == dfs.n_timesteps
+
+
+
+
