@@ -294,3 +294,36 @@ class Dfs2(_Dfs123):
         """
 
         raise NotImplementedError("Reprojection is no longer available in mikeio")
+
+    def to_geotiff(self, filename, item=0, time_step=0):
+
+        import rasterio
+        import rasterio.transform
+
+        cart = Cartography(self.projection_string)
+
+        west, north = cart.Geo2Proj(*(self.longitude, self.latitude))
+        north += self.ny * self.dy
+
+        transform = rasterio.transform.from_origin(
+            west,
+            north,
+            self.dx,
+            self.dy,
+        )
+
+        ds = self.read([item], time_step)
+        data = ds[0][0]
+
+        with rasterio.open(
+            filename,
+            "w",
+            driver="GTiff",
+            height=self.ny,
+            width=self.nx,
+            count=1,
+            dtype=data.dtype,
+            crs=self.projection_string,
+            transform=transform,
+        ) as dst:
+            dst.write(data, 1)
