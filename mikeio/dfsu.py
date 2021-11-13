@@ -2693,7 +2693,7 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
 
         from mikecore.Projections import Cartography
 
-        cart = Cartography(self.projection_string)
+        cart = Cartography.CreateProjOrigin(self.projection_string, grid.x0, grid.y0, 0)
 
         # Write interpolated data to 'filename'
         dfs2 = Dfs2()
@@ -2706,9 +2706,10 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
             dx=grid.dx,
             dy=grid.dy,
             coordinate=[
-                self.projection_string,  # projection
-                *cart.Proj2Geo(grid.x0, grid.y0),  # origin in geographic coordinates
-                -cart.OrientationProj,  # account for projection rotation within geographic rotation
+                cart.ProjectionString,  # projection
+                cart.LonOrigin,  # Longitude origin (geographic coordinates)
+                cart.LatOrigin,  # Latitude origin (geographic coordinates)
+                cart.Orientation,  # account for projection rotation within geographic rotation
             ],
             title=None,  # TODO - infer it from parent Dfsu
         )
