@@ -2577,7 +2577,7 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
         rotation: float = 0,
         epsg: typing.Optional[int] = None,
         interpolation_method: str = "nearest",
-        items: typing.List[ItemInfo] = None,
+        items=None,
         filename: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
         """Export Dfsu to Dfs2 file.
