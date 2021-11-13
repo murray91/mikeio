@@ -297,13 +297,18 @@ class Dfs2(_Dfs123):
 
     def to_geotiff(self, filename, item=0, time_step=0):
 
-        import rasterio
-        import rasterio.transform
+        try:
+            import rasterio
+            import rasterio.transform
+        except ImportError:
+            raise ImportError(
+                "Missing optional dependency rasterio. Install manually to use to_geotiff()."
+            )
 
         cart = Cartography(self.projection_string)
 
         west, north = cart.Geo2Proj(*(self.longitude, self.latitude))
-        north += self.ny * self.dy
+        north += self.ny * self.dy  # rasterio.transform uses top left origin
 
         transform = rasterio.transform.from_origin(
             west,
