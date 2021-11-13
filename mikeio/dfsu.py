@@ -2567,13 +2567,12 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
 
     def to_dfs2(
         self,
-        x0: float,
-        y0: float,
-        dx: float,
-        dy: float,
-        nx: int = 20,
-        ny: int = 20,
-        nxny_from_extent: bool = False,
+        x0: float = None,
+        y0: float = None,
+        dx: float = 5,
+        dy: float = 5,
+        nx: int = None,
+        ny: int = None,
         rotation: float = 0,
         epsg: typing.Optional[int] = None,
         interpolation_method: str = "nearest",
@@ -2586,22 +2585,20 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
 
         Parameters
         ----------
-        x0 : float
+        x0 : float, defaults to minimum x-coord
             X-coordinate of the bottom left corner of the 2D grid,
             must be in the same coordinate system as the parent Dfsu file.
-        y0 : float
+        y0 : float, defaults to minimum y-coord
             Y-coordinate of the bottom left corner of the 2D grid,
             must be in the same coordinate system as the parent Dfsu file.
-        dx : float
+        dx : float, defaults to 5m.
             Grid resolution in the X direction in the units of CRS defined by `epsg`.
-        dy : float
+        dy : float, defaults to 5m.
             Grid resolution in the Y direction in the units of CRS defined by `epsg`.
         nx : int, optional
-            Grid size in the X direction. By default it is 20.
+            Grid size in the X direction. Default calculated from dfsu extent.
         ny : int, optional
-            Grid size in the Y direction. By default it is 20.
-        nxny_from_extent : bool, optional
-            If set to true, calculates nx and ny from max dfsu extent.
+            Grid size in the Y direction. Default calculated from dfsu extent.
         rotation : float, optional
             Grid clockwise rotation in degrees. Be default it is 0.
         epsg : int, optional
@@ -2643,9 +2640,15 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
                     f"must be string or pathlib.Path"
                 )
 
-        # Calculates nx and ny from dfsu extent
-        if nxny_from_extent:
-            raise NotImplemented("cover_extent not implemented yet")
+        # Set default origin if not specified.
+        if x0 == None or y0 == None:
+            x0, y0 = np.min(self.get_node_coords(), axis=0)[:2]
+
+        # Set default nx and ny from dfsu extent.
+        if nx == None or ny == None:
+            x1, y1 = np.max(self.get_node_coords(), axis=0)[:2]
+            nx = int(np.ceil((x1 - x0) / dx))
+            ny = int(np.ceil((y1 - y0) / dy))
 
         # Define 2D grid in 'epsg' projection
         grid = Grid2D(
