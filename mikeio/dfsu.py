@@ -2573,6 +2573,7 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
         dy: float,
         nx: int = 20,
         ny: int = 20,
+        nxny_from_extent: bool = False,
         rotation: float = 0,
         epsg: typing.Optional[int] = None,
         interpolation_method: str = "nearest",
@@ -2599,6 +2600,8 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
             Grid size in the X direction. By default it is 20.
         ny : int, optional
             Grid size in the Y direction. By default it is 20.
+        nxny_from_extent : bool, optional
+            If set to true, calculates nx and ny from max dfsu extent.
         rotation : float, optional
             Grid clockwise rotation in degrees. Be default it is 0.
         epsg : int, optional
@@ -2639,6 +2642,10 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
                     f"invalid type in '{type(filename)}' for the 'filename' argument, "
                     f"must be string or pathlib.Path"
                 )
+
+        # Calculates nx and ny from dfsu extent
+        if nxny_from_extent:
+            raise NotImplemented("cover_extent not implemented yet")
 
         # Define 2D grid in 'epsg' projection
         grid = Grid2D(
