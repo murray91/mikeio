@@ -11,7 +11,7 @@ import tempfile
 from tqdm import trange
 import typing
 
-from mikecore.eum import eumUnit, eumQuantity
+from mikecore.eum import eumItem, eumUnit, eumQuantity
 from mikecore.DfsFactory import DfsFactory
 from mikecore.DfsuBuilder import DfsuBuilder
 from mikecore.DfsuFile import DfsuFile
@@ -2576,6 +2576,7 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
         rotation: float = 0,
         epsg: typing.Optional[int] = None,
         interpolation_method: str = "nearest",
+        items: typing.List[ItemInfo] = None,
         filename: typing.Optional[typing.Union[str, pathlib.Path]] = None,
     ):
         """Export Dfsu to Dfs2 file.
@@ -2606,6 +2607,8 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
             If None (default), uses coordinate system of the parent Dfsu file.
         interpolation_method : str, optional
             Interpolation method, by default it is 'nearest'.
+        items: list[int] or list[str], optional
+            Read only selected items, by number (0-based), or by n
         filename : str or pathlib.Path, optional
             Path to dfs2 file to be created.
             If None (default), creates a temporary dfs2 file
@@ -2678,7 +2681,7 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
             p=2,
             radius=None,
         )
-        dataset = self.read(items=None, time_steps=None, elements=None)
+        dataset = self.read(items=items, time_steps=None, elements=None)
         interpolated_dataset = self.interp2d(
             dataset,
             elem_ids=elem_ids,
@@ -2688,6 +2691,10 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
 
         interpolated_dataset = interpolated_dataset.flipud()
 
+        from mikecore.Projections import Cartography
+
+        cart = Cartography(self.projection_string)
+
         # Write interpolated data to 'filename'
         dfs2 = Dfs2()
         dfs2.write(
@@ -2695,14 +2702,13 @@ class Dfsu(_UnstructuredFile, EquidistantTimeSeries):
             data=interpolated_dataset,
             start_time=dataset.time[0].to_pydatetime(),
             dt=dataset.timestep,
-            items=self.items,
+            items=dataset.items,
             dx=grid.dx,
             dy=grid.dy,
             coordinate=[
                 self.projection_string,  # projection
-                grid.x0,  # origin_x
-                grid.y0,  # orign_y
-                0,  # grid orientation - TODO account for 'rotation' argument
+                *cart.Proj2Geo(grid.x0, grid.y0),  # origin in geographic coordinates
+                -cart.OrientationProj,  # account for projection rotation within geographic rotation
             ],
             title=None,  # TODO - infer it from parent Dfsu
         )
