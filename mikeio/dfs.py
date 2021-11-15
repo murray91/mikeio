@@ -33,6 +33,7 @@ class _Dfs123(TimeSeries):
         self._override_coordinates = False
         self._timeseries_unit = TimeStepUnit.SECOND
         self._dt = None
+        self._customBlocks = None
 
     def read(self, items=None, time_steps=None):
         """
@@ -129,6 +130,7 @@ class _Dfs123(TimeSeries):
         items,
         coordinate,
         title,
+        customblocks=None,
         keep_open=False,
     ):
 
@@ -163,6 +165,9 @@ class _Dfs123(TimeSeries):
             self._is_equidistant = False
             start_time = datetimes[0]
             self._start_time = start_time
+
+        if customblocks is not None:
+            self._customBlocks = customblocks
 
         dfs = self._setup_header(filename)
         self._dfs = dfs
@@ -320,6 +325,12 @@ class _Dfs123(TimeSeries):
                     self._timeseries_unit, system_start_time
                 )
             )
+
+        if self._customBlocks is not None:
+            for customblock in self._customBlocks:
+                self._builder.AddCustomBlock(
+                    self._factory.CreateCustomBlock(*customblock)
+                )
 
         for item in self._items:
             self._builder.AddCreateDynamicItem(

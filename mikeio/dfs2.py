@@ -122,6 +122,7 @@ class Dfs2(_Dfs123):
         dy=None,
         coordinate=None,
         title=None,
+        customblocks=None,
         keep_open=False,
     ):
         """
@@ -176,6 +177,7 @@ class Dfs2(_Dfs123):
             items,
             coordinate,
             title,
+            customblocks,
             keep_open,
         )
 
